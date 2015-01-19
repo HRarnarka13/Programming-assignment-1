@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Programming assignment 1</title>
+
+		<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+	<!-- jQuery library -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+	<!-- Latest compiled JavaScript -->
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+	<script type="text/javascript" src="paint.js"></script>
+</head>
+<body>
+	<div class="container">
+		<h1>Programming assignment 1</h1>
+		<div>
+			<button id="pencil" type="button" class="btn btn-primary">
+				 <span class="glyphicon glyphicon-pencil"></span>
+			</button>
+			<button id="line" type="button" class="btn btn-default">
+				Draw line
+			</button>
+			<button id="circle" type="button" class="btn btn-default">
+				Draw circle
+			</button>
+			<button id="square" type="button" class="btn btn-default">
+				Draw square
+			</button>
+			<button type="button" class="btn btn-default">
+				 <span class="glyphicon glyphicon-font"></span>
+			</button>
+			<button id="undo" type="button" class="btn btn-default">
+				Undo
+			</button>
+			<button id="redo" type="button" class="btn btn-default">
+				Redo
+			</button>
+		</div>
+		<div>
+			<canvas id="imageView" width="600px" height="400px"></canvas>
+		</div>
+		<div id="sketch">
+			<button type="button" class="btn btn-success">
+				Save <span class="glyphicon glyphicon-floppy-disk"></span>
+			</button>
+			<button id="clearCanvas" type="button" class="btn btn-warning">
+				Clear img <span class="glyphicon glyphicon-trash"></span>
+			</button>
+		</div>
+		<footer>
+			<a href="mailto:#">arnarka13@ru.is</a>
+		</footer>
+	</div>
+</body>
+</html>
