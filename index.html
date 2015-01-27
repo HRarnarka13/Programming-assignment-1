@@ -12,49 +12,131 @@
 	<!-- Latest compiled JavaScript -->
 	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 
-	<link rel="stylesheet" type="text/css" href="stylesheet.css"/>
-	<script type="text/javascript" src="paint.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/stylesheet.css"/>
+	<script type="text/javascript" src="js/paint.js"></script>
+	
+	<!--Colorpicker -->
+	<script src="js/colpick.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="css/colpick.css" type="text/css"/>
 </head>
 <body>
 	<div class="container">
+		
 		<h1>Programming assignment 1</h1>
-		<div>
-			<button id="pencil" type="button" class="btn btn-primary">
-				 <span class="glyphicon glyphicon-pencil"></span>
-			</button>
-			<button id="line" type="button" class="btn btn-default">
-				Draw line
-			</button>
-			<button id="circle" type="button" class="btn btn-default">
-				Draw circle
-			</button>
-			<button id="square" type="button" class="btn btn-default">
-				Draw square
-			</button>
-			<button type="button" class="btn btn-default">
-				 <span class="glyphicon glyphicon-font"></span>
-			</button>
-			<button id="undo" type="button" class="btn btn-default">
-				Undo
-			</button>
-			<button id="redo" type="button" class="btn btn-default">
-				Redo
-			</button>
+		
+		<div class="row">
+			<h2>An awsome paint web application!</h2>
+			
+			<!-- Choosing tools --> 
+			<div class="col-md-3">
+				<label for="optradio">Choose your tool:</label>
+				<div class="radio">
+					<label title="Pen">
+						<input type="radio" name="optradio" checked data-tool="pen">
+						<span class="glyphicon glyphicon-pencil"></span>
+					</label>
+				</div>
+				<div class="radio">
+					<label title="Draw Line">
+						<input type="radio" name="optradio" data-tool="line">Line
+					</label>
+				</div>
+				<div class="radio">
+				  	<label title="Draw Circle">
+				  		<input type="radio" name="optradio" data-tool="circle">Circle
+				  	</label>
+				</div>
+				<div class="radio">
+				  	<label title="Draw Rectangle">
+				  		<input type="radio" name="optradio" data-tool="rect">Rectangle
+				  	</label>
+				</div>
+				<div class="radio">
+					<label>
+				  		<input id="select_font" type="radio" name="optradio" data-tool="text">
+				  		<span class="glyphicon glyphicon-font"></span>
+				  	</label>
+				</div>
+				<div class="radio">
+				  	<label title="Move shape">
+				  		<input type="radio" name="optradio" data-tool="move">Move shape
+				  	</label>
+				</div>
+			</div>
+
+			<!-- Color picker and line witdth -->
+			<div class="col-md-3">
+				<form class="form">
+					<div class="form-group">
+						<label for="colorpicker">Pick Color: </label>
+						<button id="colorpicker" type="button" class="btn btn-default"></button>
+					</div>
+					<div class="form-group">
+						<label for="strokesize">Line width: </label>
+						<input id="strokesize" class="form-control" type="range" name="points" min="1" max="30" value="1">	
+					</div>
+				</form>
+				<label for line-preview>Line width preview: </label>
+				<canvas id="line-preview" width="200px" height="40px"></canvas>
+			</div>
 		</div>
-		<div>
-			<canvas id="imageView" width="600px" height="400px"></canvas>
+		<br/>
+		<!-- Tools for text, font style, font size ect. -->
+		<div class="row text_tools">
+			<div class="col-md-8">
+				<form class="form-inline">
+					<div class="form-group">
+						<label for="font_family" title="Choose font family">Font: </label>
+						<select id="font_family" class="form-control">
+							<option value="Times-New-Roman">Times New Roman</option>
+						    <option value="Arial">Arial</option>
+						    <option value="Comic-Sans-MS">Comic Sans MS</option>
+						    <option value="Calibri">Calibri</option>
+						    <option value="Bedrock">Bedrock</option>
+						</select>
+						<button id="bold_font" title="Bold font" type="button" class="btn btn-default" data-toggle="button" aria-pressed="false" autocomplete="off"><span class="glyphicon glyphicon-bold"></span></button>
+						<button id="italic_font" title="Italic font" type="button" class="btn btn-default" data-toggle="button" aria-pressed="false" autocomplete="off"><span class="glyphicon glyphicon-italic"></span></button>
+					</div>		
+					<div class="form-group">
+						<label for="font_size" title="Choose font size">Font size: <span class="glyphicon glyphicon-text-width"></span></label>
+				 		<input id="font_size" class="form-control" type="number" value="30"></input>
+					</div>
+				</form>
+			</div>
 		</div>
-		<div id="sketch">
-			<button type="button" class="btn btn-success">
-				Save <span class="glyphicon glyphicon-floppy-disk"></span>
-			</button>
-			<button id="clearCanvas" type="button" class="btn btn-warning">
-				Clear img <span class="glyphicon glyphicon-trash"></span>
-			</button>
+		
+		<!-- Undo and redo buttons -->
+		<div class="row ">
+			<div class="col-md-8 col-md-offset-8">
+				<div class="form-group">
+					<button id="undo" type="button" class="btn btn-default">Undo</button>
+					<button id="redo" type="button" class="btn btn-default">Redo</button>
+					<button id="clearCanvas" type="button" class="btn btn-warning">
+						<span class="glyphicon glyphicon-trash"></span> Clear image 
+					</button>
+				</div>
+			</div>
 		</div>
+
+		<!-- Canvas / image-area -->
+		<canvas id="imageView" width="900px" height="400px"></canvas>
+		<div id="text-spawner"></div>
+
+		<!-- Save and delete button -->
+		<div class="row ">
+			<div class="col-md-8">
+				<button id="save_img" type="button" class="btn btn-success">
+					<span class="glyphicon glyphicon-floppy-disk"></span> Save image 
+				</button>
+			</div>
+		</div>
+		<br/>
+
+		<!-- Contact info -->
 		<footer>
 			<a href="mailto:#">arnarka13@ru.is</a>
 		</footer>
+
 	</div>
 </body>
 </html>
