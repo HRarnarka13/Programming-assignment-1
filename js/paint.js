@@ -21,6 +21,7 @@ $(document).ready(function () {
 			nextColor = '#' + hex;
 			document.getElementById('colorpicker').style.backgroundColor = nextColor;
 			MakeLinePreview();
+			$("#text-spawner").find("input").css("color", nextColor);
 
 		}
 	}).keyup(function(){
@@ -95,6 +96,9 @@ $(document).ready(function () {
 			context.arc(this.x, this.y, radius, 0, 2 * Math.PI);
 			context.stroke();
 		}
+		this.contains = function(){
+
+		}
 	}
 
 	function Rect (x, y, width, height) {
@@ -103,8 +107,25 @@ $(document).ready(function () {
 		this.width = width;
 		this.height = height;
 		this.draw = function (context) {
-			SetStyle(context,this);
+			SetStyle(context, this);
 			context.strokeRect(this.x, this.y, width, height);
+		}
+		this.contains = function (findX, findY) {
+			var lowY = this.y - this.lineWidth;
+			var highY = this.y + parseInt(this.lineWidth);
+			var lowX = this.x - this.lineWidth;
+			var highX = this.x + parseInt(this.lineWidth);
+
+			if ((((this.x + this.width >= findX) && (this.x <= findX)) 
+					 && ((lowY <= findY && findY <= highY) 									
+					   || (lowY + this.height <= findY && findY <= highY + this.height))) // horizantal line
+				|| ((this.y + this.height >= findY && this.y <= findY) 
+					&& ((lowX <= findX && findX <= highX) 
+						|| (lowX + this.width <= findX && findX <= highX + this.width))) // vertical line 
+				){
+				return true;
+			}
+			return false;
 		}
 	}
 
@@ -139,6 +160,8 @@ $(document).ready(function () {
 			shape.strokeStyle = nextColor;
 			shape.lineWidth = nextPenSize;
 		} else {
+			// console.log("shape.color: " + shape.color);
+			//console.log("nextColor: " + nextColor);
 			shape.color = nextColor;
 			shape.lineWidth = nextPenSize;
 		}
@@ -146,6 +169,8 @@ $(document).ready(function () {
 
 	var pen;
 	var currentInputBox;
+	var movingOpject;
+
 	$('#imageView').mousedown(function(e){
 		drawing = true;
 		// DrawAll();
@@ -165,6 +190,7 @@ $(document).ready(function () {
 			}
 			currentInputBox = $("<input placeholder=\"Enter your text\" />");
 			currentInputBox.css("position", "fixed");
+			currentInputBox.css("color", nextColor);
 		    currentInputBox.css("left", e.originalEvent.pageX);
 		    currentInputBox.css("top", e.originalEvent.pageY - 20);
 		    
@@ -197,6 +223,15 @@ $(document).ready(function () {
 					drawing = false;
 		    	}
 		    });
+		} else if (tool === 'move'){
+			for (var i = imgArr.length - 1; i >= 0; i--) {
+				if (imgArr[i].contains(startx, starty)){
+					console.log("pressed on rect");
+					movingOpject = imgArr[i];
+				} else {
+					console.log("nothing here");
+				}
+			}
 		}
 	});
 
@@ -238,6 +273,12 @@ $(document).ready(function () {
 					context.strokeRect(_x, _y, _w, _h);
 		      	} else if (tool === 'text') {
 		      		currentInputBox.focus();
+		      	} else if (tool === 'move' && movingOpject) {
+		      		console.log("startx: " + startx + " starty: " + starty);
+		      		console.log("x:      " + x      + "         " + y);
+		      		movingOpject.x =  x;
+		      		movingOpject.y =  y;
+		      		movingOpject.draw(context);
 		      	}
 		    }
       	}
@@ -269,9 +310,11 @@ $(document).ready(function () {
 	      	SetStyle(rect);
 	      	// console.log(rect);
 	      	imgArr.push(rect);
+	    } else if (tool === 'move') {
+	    	movingOpject = null;
 	    }
 
-		drawing = false;
+		drawing = false;	
 	});
 
 	$('input[name^=optradio]').click(function(e) {
@@ -291,10 +334,7 @@ $(document).ready(function () {
 	});
 
 	$('#undo').click(function() {
-		if (isCanvasBlank(canvas)){
-			clearCanvas();
-			DrawAll();
-		} else if ( imgArr.length > 0 ) {
+		if ( imgArr.length > 0 ) {
 			undoArr.push(imgArr[imgArr.length - 1]);
 			imgArr.pop();
 			clearCanvas();
@@ -314,7 +354,7 @@ $(document).ready(function () {
 	$("#save_img").click(function(){
 		var stringifiedArray = JSON.stringify(imgArr);
 		var title = "prufa_mynd"
-		var param = { "user": "arnarka13", // You should use your own username!
+		var param = { "user": "arnarka13",
 			"name": title,
 			"content": stringifiedArray,
 			"template": true
@@ -340,20 +380,11 @@ $(document).ready(function () {
 
 	$("#clearCanvas").click(function(){
 		clearCanvas();
-		// imgArr = [];
+		imgArr = [];
 	});
 
 	function clearCanvas(){
 		// console.log("clearRect");
 		context.clearRect(0, 0, canvas.width, canvas.height);
 	}
-
-	function isCanvasBlank(canvas) {
-	    var blank = document.createElement('canvas');
-	    blank.width = canvas.width;
-	    blank.height = canvas.height;
-
-	    return canvas.toDataURL() == blank.toDataURL();
-	}
-
 });
