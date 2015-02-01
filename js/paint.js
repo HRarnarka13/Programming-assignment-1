@@ -1,35 +1,41 @@
 $(document).ready(function () {
+
+	// Global varible
+	var g = {
+		drawing: false,
+		moving: false,
+		startx: 0,
+		starty: 0,
+		imgArr: [],
+		undoArr: [],
+		tool: "pen",
+		currObject: null,
+		nextColor: "#000000",
+		nextPenSize: 1
+	};
 	var canvas = document.getElementById('imageView');
 	var context = canvas.getContext("2d");
-	var drawing = false;
-	var startx = 0;
-	var starty = 0;
-
-	var imgArr = [];
-	var undoArr = [];
-	var tool = 'pen';
-	var nextColor = '#000000';
-	var nextPenSize = 1;
-
 	MakeLinePreview();
 
+	// Changing color
 	$('#colorpicker').colpick({
 		layout:'hex',
 		submit:0,
 		colorScheme:'dark',
 		onChange:function(hsb,hex,rgb,el,bySetColor) {
-			nextColor = '#' + hex;
-			document.getElementById('colorpicker').style.backgroundColor = nextColor;
+			g.nextColor = '#' + hex;
+			document.getElementById('colorpicker').style.backgroundColor = g.nextColor;
 			MakeLinePreview();
-			$("#text-spawner").find("input").css("color", nextColor);
+			$("#text-spawner").find("input").css("color", g.nextColor);
 
 		}
 	}).keyup(function(){
 		$(this).colpickSetColor(this.value);
 	});
 
+	// Changing line width
 	$('#strokesize').click(function(){
-		nextPenSize = this.value;
+		g.nextPenSize = this.value;
 		MakeLinePreview();
 	});
 
@@ -37,8 +43,8 @@ $(document).ready(function () {
 		var canvas = document.getElementById('line-preview');
 		var context = canvas.getContext("2d");
 		context.clearRect(0, 0, canvas.width, canvas.height);
-		context.strokeStyle = nextColor;
-		context.lineWidth = nextPenSize;
+		context.strokeStyle = g.nextColor;
+		context.lineWidth = g.nextPenSize;
 		context.beginPath();
      	context.moveTo(0, 20);
 		context.lineTo(200, 20);
@@ -50,62 +56,94 @@ $(document).ready(function () {
 		this.y = y;
 	}
 
-	function Shape(color) {
-		this.x = 0;
-		this.y = 0;
-		this.color = nextColor;
-		this.lineWidth = nextPenSize;
-	}
-
-	function Pen(x, y, cordinates) {
+	function Pen(x, y, cordinates, color, lineWidth) {
 		this.x = x;
 		this.y = y;
 		this.cordinates = cordinates;
+		this.lineWidth = lineWidth;
+		this.color = color;
 		this.draw = function (context) {
 			SetStyle(context,this);
-			//context.strokeStyle = this.color;
-			// context.lineWidth = this.lineWidth;
 			context.beginPath();
 			for (var i = this.cordinates.length - 1; i >= 0; i--) {
 				context.lineTo(this.cordinates[i].x, this.cordinates[i].y);
 				context.stroke();
-			};
-			
+			};	
+		}
+		this.contains = function (findX, findY) {
+			// Todo
+			return false;
 		}
 	}
 
-	function Line(sX, sY, eX, eY){
+	function Eraser (x, y, cordinates) {
+		this.x = x;
+		this.y = y;
+		this.cordinates = cordinates;
+		this.draw = function (context) {
+			context.lineWidth = this.lineWidth;
+			context.strokeStyle = "#ffffff";
+			context.beginPath();
+			for (var i = this.cordinates.length - 1; i >= 0; i--) {
+				context.lineTo(this.cordinates[i].x, this.cordinates[i].y);
+				context.stroke();
+			};	
+		}
+		this.contains = function (findX, findY) {
+			// Todo
+			return false;
+		}
+	}
+
+	function Line(sX, sY, eX, eY, color, lineWidth) {
 		this.x = sX;
 		this.y = sY;
 		this.endX = eX;
 		this.endY = eY;
-		this.draw = function(context){
+		this.color = color;
+		this.lineWidth = lineWidth;
+		this.draw = function( context ){
 			SetStyle(context,this);
 			context.beginPath();
-     		context.moveTo(sX, sY);
-			context.lineTo(eX, eY);
+     		context.moveTo(this.x, this.y);
+			context.lineTo(this.endX, this.endY);
 	      	context.stroke();
+		}
+		this.contains = function (findX, findY){
+			if(Math.abs(findX - this.x) < 10 && Math.abs(findY - this.y) < 10) {
+				return true;
+			}
+			return false;
 		}
 	}
 
-	function Circle (radius) {
+	function Circle (x, y, radius, color, lineWidth) {
+		this.x = x;
+		this.y = y;
 		this.radius = radius;
-		this.draw = function(context){
+		this.color = color;
+		this.lineWidth = lineWidth;
+		this.draw = function ( context ){
 			SetStyle(context,this);
 			context.beginPath();
 			context.arc(this.x, this.y, radius, 0, 2 * Math.PI);
 			context.stroke();
 		}
-		this.contains = function(){
-
+		this.contains = function(findX, findY) {
+			if (Math.abs(findX - this.x) < 10 && Math.abs(findY - this.y) < 10){
+				return true;
+			}
+			return false;
 		}
 	}
 
-	function Rect (x, y, width, height) {
+	function Rect (x, y, width, height, color, lineWidth) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
+		this.color = color;
+		this.lineWidth = lineWidth;
 		this.draw = function (context) {
 			SetStyle(context, this);
 			context.strokeRect(this.x, this.y, width, height);
@@ -129,26 +167,32 @@ $(document).ready(function () {
 		}
 	}
 
-	function Text (text, font, font_size) {
+	function Text (x, y, text, font, font_size, color) {
+		this.x = x;
+		this.y = y;
+		this.color = color;
 		this.text = text;
 		this.font = font;
 		this.font_size = font_size;
 		this.draw = function () {
 			context.fillStyle = this.color;
 			context.font = this.font;
-			context.fillText(text, this.x, this.y);
+			context.fillText(this.text, this.x, this.y);
+		}
+		this.contains = function (findX, findY) {
+			var text_hight = this.y - context.measureText('M').width;
+			var text_width = context.measureText(this.text).width + this.x;
+			if ((this.x <= findX && findX <= text_width) && (this.y > findY && findY > text_hight)) {
+				console.log(this);
+				return true;
+			}
+			return false;
 		}
 	}
 
-	Pen.prototype = new Shape();
-	Line.prototype = new Shape();
-	Circle.prototype = new Shape();
-	Rect.prototype = new Shape();
-	Text.prototype = new Shape();
-
 	function DrawAll() {
-		for (var i = imgArr.length - 1; i >= 0; i--) {
-			imgArr[i].draw(context);
+		for (var i = g.imgArr.length - 1; i >= 0; i--) {
+			g.imgArr[i].draw(context);
 		};
 	}
 
@@ -157,50 +201,51 @@ $(document).ready(function () {
 			shape.strokeStyle = style.color;
 			shape.lineWidth = style.lineWidth;
 		} else if (shape === context){
-			shape.strokeStyle = nextColor;
-			shape.lineWidth = nextPenSize;
+			shape.strokeStyle = g.nextColor;
+			shape.lineWidth = g.nextPenSize;
 		} else {
-			// console.log("shape.color: " + shape.color);
-			//console.log("nextColor: " + nextColor);
-			shape.color = nextColor;
-			shape.lineWidth = nextPenSize;
+			shape.color = g.nextColor;
+			shape.lineWidth = g.nextPenSize;
 		}
 	};
 
-	var pen;
 	var currentInputBox;
 	var movingOpject;
 
 	$('#imageView').mousedown(function(e){
-		drawing = true;
-		// DrawAll();
-		startx = e.pageX - this.offsetLeft;
-		starty = e.pageY - this.offsetTop;
+		g.drawing = true;
+		g.startx = e.pageX - this.offsetLeft;
+		g.starty = e.pageY - this.offsetTop;
 		SetStyle(context);
-		if (tool === 'pen') {
+
+		if (g.tool === 'pen') {
 			var arr = [];
-			pen = new Pen(startx, starty, arr);
+			g.currObject = new Pen(g.startx, g.starty, arr, g.nextColor, g.nextPenSize);
 			context.beginPath();
-	     	context.moveTo(startx, starty);
-	    } else if (tool === 'circle'){
-	    	// context.beginPath();
-		} else if (tool === 'text') {
+	     	context.moveTo(g.startx, g.starty);
+	    } else if (g.tool === 'eraser') {
+	    	var arr = [];
+	    	g.currObject = new Eraser(g.startx, g.starty, arr);
+	    	context.strokeStyle = "#ffffff";
+	    	context.beginPath();
+	     	context.moveTo(g.startx, g.starty);
+	    } else if (g.tool === 'text') {
+			g.currObject = null;
 			if(currentInputBox){
 				currentInputBox.remove();
 			}
-			currentInputBox = $("<input placeholder=\"Enter your text\" />");
+			currentInputBox = $("<input id=\"text_box\" placeholder=\"Enter your text\" />");
 			currentInputBox.css("position", "fixed");
-			currentInputBox.css("color", nextColor);
+			currentInputBox.css("color", g.nextColor);
 		    currentInputBox.css("left", e.originalEvent.pageX);
 		    currentInputBox.css("top", e.originalEvent.pageY - 20);
-		    
 		    $("#text-spawner").append(currentInputBox);
 		    $("#text-spawner").mouseover(function(){
 		    	currentInputBox.focus();
 		    });
-
+		    $("#text_box").focus();
 		    $("#text-spawner").keypress(function(event){
-		    	if(event.which === 13) {
+		    	if(event.which === 13 && g.currObject === null) {
 		    		var input_text = currentInputBox.val();
 		    		currentInputBox.remove();
 					var font_size = document.getElementById('font_size').value + "px ";
@@ -214,70 +259,74 @@ $(document).ready(function () {
 					} else if ($("#italic_font").hasClass("active")){
 						font_style = "italic ";
 					}
-					var text = new Text(input_text, font_style + font_size + font_family, font_size);
-					text.x = startx;
-					text.y = starty;
-					text.color = nextColor;
-					imgArr.push(text);
-					text.draw();
-					drawing = false;
+
+					g.currObject = new Text(g.startx, g.starty, input_text, font_style + font_size + font_family, font_size, g.nextColor);
+					console.log(g.currObject);
+					g.imgArr.push(g.currObject);
+					g.currObject.draw();
+					g.drawing = false;
 		    	}
 		    });
-		} else if (tool === 'move'){
-			for (var i = imgArr.length - 1; i >= 0; i--) {
-				if (imgArr[i].contains(startx, starty)){
-					console.log("pressed on rect");
-					movingOpject = imgArr[i];
-				} else {
-					console.log("nothing here");
+		} else if (g.tool === 'move'){
+			for (var i = 0; i < g.imgArr.length; ++i) {
+				if (g.imgArr[i].contains(g.startx, g.starty)){
+					movingOpject = g.imgArr[i];
+					g.imgArr.splice(i, 1);
+					g.imgArr.push(movingOpject);
+					g.moving = true;
 				}
 			}
 		}
 	});
 
 	$('#imageView').mousemove(function(e) {
-		if (drawing === true) {
+		if (g.drawing === true || g.moving === true) {
 			var x = e.pageX - this.offsetLeft;
 			var y = e.pageY - this.offsetTop;
-			if (tool === 'pen'){
+			if (g.tool === 'pen' || g.tool === 'eraser'){
 				context.lineTo(x, y);
 				context.stroke();
-				pen.cordinates.push(new Cordinates(x,y));
+				g.currObject.cordinates.push(new Cordinates(x,y));
 			} else {
 				clearCanvas();
 				DrawAll();
-				context.strokeStyle = nextColor;
-				context.lineWidth = nextPenSize;
+				SetStyle(context);
+				//context.strokeStyle = g.nextColor;
+				//context.lineWidth = g.nextPenSize;
 
-				if (tool === 'line'){
+				if (g.tool === 'line'){
 					context.beginPath();
-		     		context.moveTo(startx, starty);
+		     		context.moveTo(g.startx, g.starty);
 					context.lineTo(x, y);
 			      	context.stroke();
-			    } else if (tool === 'circle') {
-			    	// Todo
+			    } else if (g.tool === 'circle') {
 			    	context.beginPath();
-			    	var centerX = Math.max(startx, x) - Math.abs(startx - x)/2;
-					var centerY = Math.max(starty, y) - Math.abs(starty - y)/2;
-					var radius = Math.sqrt(Math.pow(startx - x, 2) + Math.pow(starty - y, 2));
-			    	context.arc(startx, starty, radius, 0, 2 * Math.PI);
+					var radius = Math.sqrt(Math.pow(g.startx - x, 2) + Math.pow(g.starty - y, 2));
+			    	context.arc(g.startx, g.starty, radius, 0, 2 * Math.PI);
 			    	context.stroke();
-		      	} else if (tool === 'rect') {
-		      		var _x = Math.min(x, startx),
-						_y = Math.min(y, starty),
-						_w = Math.abs(x - startx),
-						_h = Math.abs(y - starty);
+		      	} else if (g.tool === 'rect') {
+		      		var _x = Math.min(x, g.startx),
+						_y = Math.min(y, g.starty),
+						_w = Math.abs(x - g.startx),
+						_h = Math.abs(y - g.starty);
 					if (!_w || !_h) {
 						return;
 					}
 					context.strokeRect(_x, _y, _w, _h);
-		      	} else if (tool === 'text') {
+		      	} else if (g.tool === 'text') {
 		      		currentInputBox.focus();
-		      	} else if (tool === 'move' && movingOpject) {
-		      		console.log("startx: " + startx + " starty: " + starty);
-		      		console.log("x:      " + x      + "         " + y);
-		      		movingOpject.x =  x;
-		      		movingOpject.y =  y;
+		      	} else if (g.tool === 'move' && movingOpject) {
+		      		if (movingOpject.constructor === Line) {
+		      			var deltaX = movingOpject.x - x;
+		      			var deltaY = movingOpject.y - y;
+		      			movingOpject.x = Math.abs(movingOpject.x - deltaX);
+		      			movingOpject.y = Math.abs(movingOpject.y - deltaY);
+		      			movingOpject.endX = Math.abs(movingOpject.endX - deltaX);
+		      			movingOpject.endY = Math.abs(movingOpject.endY - deltaY);
+		      		} else {
+		      			movingOpject.x =  x;
+		      			movingOpject.y =  y;
+		      		}
 		      		movingOpject.draw(context);
 		      	}
 		    }
@@ -287,72 +336,64 @@ $(document).ready(function () {
 	$('#imageView').mouseup(function(e) {
 		var x = e.pageX - this.offsetLeft;
 		var y = e.pageY - this.offsetTop;
-
-		if (tool === 'pen') {
-			
-			SetStyle(pen);
-			imgArr.push(pen);
-			pen = undefined;
-		} else if (tool === 'line') {
-			var line = new Line(startx, starty, x, y);
-			SetStyle(line);
-			// console.log(line);
-			imgArr.push(line);
-		} else if (tool === 'circle') {
-			var radius = Math.sqrt(Math.pow(startx - x, 2) + Math.pow(starty - y, 2));
-			var circle = new Circle(radius);
-			circle.x = startx;
-			circle.y = starty;
-			SetStyle(circle);
-			imgArr.push(circle);
-		} else if (tool === 'rect') {
-	      	var rect = new Rect(Math.min(x, startx), Math.min(y, starty), Math.abs(x - startx), Math.abs(y - starty));
-	      	SetStyle(rect);
-	      	// console.log(rect);
-	      	imgArr.push(rect);
-	    } else if (tool === 'move') {
+		var radius = 0;
+		if (g.tool === 'pen') {
+			console.log(g.currObject);
+			g.imgArr.push(g.currObject);
+		} else if (g.tool === 'eraser') {
+			g.currObject.lineWidth = g.nextPenSize;
+			g.imgArr.push(g.currObject);
+		} else if (g.tool === 'line') {
+			g.currObject = new Line(g.startx, g.starty, x, y, g.nextColor, g.nextPenSize);
+			SetStyle(g.currObject);
+			g.imgArr.push(g.currObject);
+		} else if (g.tool === 'circle') {
+			radius = Math.sqrt(Math.pow(g.startx - x, 2) + Math.pow(g.starty - y, 2));
+			g.currObject = new Circle(g.startx, g.starty, radius, g.nextColor, g.nextPenSize);
+			g.imgArr.push(g.currObject);
+		} else if (g.tool === 'rect') {
+	      	g.currObject = new Rect(Math.min(x, g.startx), Math.min(y, g.starty), Math.abs(x - g.startx), Math.abs(y - g.starty), g.nextColor, g.nextPenSize);
+	      	g.imgArr.push(g.currObject);
+	    } else if (g.tool === 'move') {
 	    	movingOpject = null;
 	    }
-
-		drawing = false;	
+	    g.currObject = null;
+		g.drawing = false;	
+		g.moving = false;
 	});
 
 	$('input[name^=optradio]').click(function(e) {
-		tool = this.dataset.tool;
-		console.log("Switched to: " + tool);
-		if (tool === 'text') {
-			var tools = document.getElementsByClassName('text_tools');
-			for (var i = tools.length - 1; i >= 0; i--) {
+		g.tool = this.dataset.tool;
+		var tools = document.getElementsByClassName('text_tools');
+		for (var i = tools.length - 1; i >= 0; i--) {
+			if (g.tool === 'text') {
 				tools[i].style.display = 'block';
-			};
-		} else {
-			var tools = document.getElementsByClassName('text_tools');
-			for (var i = tools.length - 1; i >= 0; i--) {
+			} else {
 				tools[i].style.display = 'none';
-			};
+			}
 		}
 	});
 
 	$('#undo').click(function() {
-		if ( imgArr.length > 0 ) {
-			undoArr.push(imgArr[imgArr.length - 1]);
-			imgArr.pop();
+		if ( g.imgArr.length > 0 ) {
+			g.undoArr.push(g.imgArr[g.imgArr.length - 1]);
+			g.imgArr.pop();
 			clearCanvas();
 			DrawAll();	
 		}
 	});
 
 	$('#redo').click(function() {
-		if ( undoArr.length > 0 ) {
+		if ( g.undoArr.length > 0 ) {
 			clearCanvas();
-			imgArr.push(undoArr[undoArr.length - 1]);
-			undoArr.pop();
+			g.imgArr.push(g.undoArr[g.undoArr.length - 1]);
+			g.undoArr.pop();
 			DrawAll();
 		}
 	});
 
 	$("#save_img").click(function(){
-		var stringifiedArray = JSON.stringify(imgArr);
+		var stringifiedArray = JSON.stringify(g.imgArr);
 		var title = "prufa_mynd"
 		var param = { "user": "arnarka13",
 			"name": title,
@@ -368,11 +409,38 @@ $(document).ready(function () {
 			dataType: "jsonp",
 			crossDomain: true,
 			success: function (data) {
-				// The save was successful...
 				console.log("save was successful");
+				console.log(data);
 			},
 			error: function (xhr, err) {
-				// Something went wrong...
+				console.log("Something went wrong...");
+			}
+		})
+	});
+	$("#load-img").click(function(){
+		console.log("heess");
+		var title = "getlist";
+		var param = { "user": "arnarka13",
+			"name": title,
+			"template": true
+		};
+
+		$.ajax({
+			type: "POST",
+			contentType: "application/json; charset=utf-8",
+			url: "http://whiteboard.apphb.com/Home/GetList",
+			data: param,
+			dataType: "jsonp",
+			crossDomain: false,
+			success: function (data) {
+				console.log("load was successful");
+				console.log(data);
+				for (var i = data.length - 1; i >= 0; i--) {
+					console.log(data[i]);
+					context.drawImage(data[i].WhiteboardContents, 0, 0);
+				};
+			},
+			error: function (xhr, err) {
 				console.log("Something went wrong...");
 			}
 		})
@@ -380,11 +448,10 @@ $(document).ready(function () {
 
 	$("#clearCanvas").click(function(){
 		clearCanvas();
-		imgArr = [];
+		g.imgArr = [];
 	});
 
 	function clearCanvas(){
-		// console.log("clearRect");
 		context.clearRect(0, 0, canvas.width, canvas.height);
 	}
 });
