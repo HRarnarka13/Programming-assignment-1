@@ -1,0 +1,21 @@
+#imageView {
+	clear: both;
+	border: 1px solid;
+	background-color: white;
+}
+#imageView:active, #imageView:focus {
+	cursor: crosshair;
+}
+#strokesize {
+	/* background-color: white; */
+}
+#colorpicker {
+	padding: 3px 30px;
+	height: 25px;
+	border-radius: 3px;
+	background-color: black;
+	/* margin-right: 30px; */
+}
+.text_tools {
+	display: none;
+}
